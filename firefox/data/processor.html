@@ -1,0 +1,25 @@
+<html>
+<head>
+<script src="jquery.js"></script>
+<script src="pbkdf2-whirlpool.js"></script>
+<script src="imgcrypt.js"></script>
+<script src="main.js"></script>
+<style>
+    body{
+        margin: 5px;
+    }
+    .hidden{
+        display: none;
+    }
+</style>
+</head>
+<body>
+    <div>
+        <button id="copy-to-clipboard" type="button" data-l10n-id="button-copy-to-clipboard"></button>
+    </div>
+
+    <canvas id="outCanvas"></canvas>
+
+    <canvas id="srcCanvas" class="hidden"></canvas>
+</body>
+</html>

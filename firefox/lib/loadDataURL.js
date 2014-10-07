@@ -21,6 +21,7 @@ function toBase64(buffer){
 
 module.exports = function(src, successCallback){
     var xhr = new XMLHttpRequest();
+    if(!/^https?:\/\//i.test(src)) return;
     xhr.open('GET', src, true);
     xhr.responseType = 'arraybuffer';
     xhr.onload = function(){

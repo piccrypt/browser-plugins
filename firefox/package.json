@@ -1,9 +1,10 @@
 {
-  "name": "encryptimage",
-  "title": "Encrypt Image 0.0.1",
-  "id": "jid1-Nr4XTaAeHB96kw",
-  "description": "Diffuse an image using cryptography but retains the image format. 使用密码混淆图片内容，但仍保持为图片格式。",
-  "author": "Anonymous",
-  "license": "MPL 2.0",
-  "version": "0.0.1"
+    "name": "encryptimage",
+    "title": "Encrypt Image",
+    "id": "jid1-Nr4XTaAeHB96kw",
+    "description": "Diffuse an image using cryptography but retains the image format. 使用密码混淆图片内容，但仍保持为图片格式。",
+    "author": "Anonymous",
+    "license": "MPL 2.0",
+    "version": "0.0.1",
+    "permissions": {"private-browsing": true}
 }

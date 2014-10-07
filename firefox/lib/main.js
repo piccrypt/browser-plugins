@@ -34,7 +34,6 @@ cm.Item({
             showProcessor({
                 command: 'decrypt',
                 dataURL: u,
-                password: 'test',
             });
         });
     },

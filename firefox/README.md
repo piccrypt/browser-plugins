@@ -21,8 +21,6 @@ on an image, and use the new items in the menu to do it!
 TODOs, or currently existing issues
 -----------------------------------
 
-0. There needs a password input dialog. Now it is using a hardcoded password
-   `test`.
 0. Support for private browsing mode should be discussed and possibly added.
 
 
@@ -46,5 +44,4 @@ Encrypt Image(加密图片)
 要做的事项
 ----------
 
-0. 当前需要添加一个密码输入框。现在还在使用程序内置的密码`test`。
 0. 需要讨论并添加隐私浏览模式下的支持。

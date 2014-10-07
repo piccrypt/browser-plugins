@@ -2,6 +2,7 @@
 <head>
 <script src="jquery.js"></script>
 <script src="pbkdf2-whirlpool.js"></script>
+<script src="dct.js"></script>
 <script src="imgcrypt.js"></script>
 <script src="main.js"></script>
 <style>
@@ -11,15 +12,55 @@
     .hidden{
         display: none;
     }
+    #passwordRequest{
+        z-index: 99;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.75);
+    }
+    #displayWindow{
+        width: 300px;
+        height: 50px;
+        position: relative;
+        top: 50%;
+        left: 50%;
+        margin-top: -25px;
+        margin-left: -150px;
+        background-color: #000000;
+        border-width: 1px;
+        border-color: #FFFFFF;
+        border-style: solid;
+        text-align: center;
+        color: #FFFFFF;
+    }
+    #password{
+        width: 99%;
+        height: 2em;
+        border: #FFFFFF solid 1px;
+    }
+    .input-error{
+        border-color: #FF0000;
+    }
 </style>
 </head>
 <body>
+    <div id="passwordRequest">
+        <div id="displayWindow">
+            <div style="height: 1.5em" data-l10n-id="prompt-password"></div>
+            <input type="password" id="password"></input>
+        </div>
+    </div>
+
     <div>
         <button id="copy-to-clipboard" type="button" data-l10n-id="button-copy-to-clipboard"></button>
     </div>
 
-    <canvas id="outCanvas"></canvas>
+    <img id="imgDisplay"></img>
 
+    <canvas id="outCanvas" class="hidden"></canvas>
     <canvas id="srcCanvas" class="hidden"></canvas>
 </body>
 </html>

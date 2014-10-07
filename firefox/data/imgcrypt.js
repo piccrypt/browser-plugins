@@ -19,6 +19,59 @@ function genPermutation(n, srcBytes){
     return ret;
 };
 
+// color hue rotator
+/*function hueRotator(r,g,b,rotation, output){
+    var h, s, v, max=0, min=255, hi, f, p, q, t;
+    if(r > max) max = r;
+    if(g > max) max = g;
+    if(b > max) max = b;
+    if(r < min) min = r;
+    if(g < min) min = g;
+    if(b < min) min = b;
+
+    if(max == min)
+        h = 0;
+    else if(r == max)
+        if(g >= b)
+            h = 60 * (g-b) / (max - min);
+        else
+            h = 60 * (g-b) / (max - min) + 360;
+    else if(g == max)
+        h = 60 * (b-r) / (max - min) + 120;
+    else if(b == max)
+        h = 60 * (r-g) / (max - min) + 240;
+    s = ((0 == max)?0:(1-min/max));
+    v = max;
+
+    h += rotation;
+    if(h < 0) h += 360;
+    if(h >= 360) h -= 360;
+
+    f = h / 60;
+    hi = f & f;
+    f -= hi;
+
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+
+    if(0 == hi){
+        output[0] = v; output[1] = t; output[2] = p;
+    } else if(1 == hi){
+        output[0] = q; output[1] = v; output[2] = p;
+    } else if(2 == hi){
+        output[0] = p; output[1] = v; output[2] = t;
+    } else if(3 == hi){
+        output[0] = p; output[1] = q; output[2] = v;
+    } else if(4 == hi){
+        output[0] = t; output[1] = p; output[2] = v;
+    } else if(5 == hi){
+        output[0] = v; output[1] = p; output[2] = q;
+    };
+};*/
+
+var dct = DCT();
+
 /****************************************************************************/
 function massMapper(width, height, data){
     var self = this;
@@ -101,26 +154,121 @@ function massMapper(width, height, data){
         };
     };
 
-    this.add = function(sid, hflip, vflip, invert, oid){
+    this.add = function(sid, randomByte, oid, direction){
         getArrayFromSrc(sid, srcTempAry);
 
         // do convert from srcTempAry to outTempAry
+        //  bit 0: vertical mirroring
+        //  bit 1: horizontal mirroring
+        //  bit 2, bit 3, bit 4: hue rotation
+        //  bit 5, bit 6, bit 7: reserved
 
-        var i=0, j, p, ox, oy;
-        for(var y=0; y<gridsize; y++){
-            if(vflip) oy = gridsize - 1 - y; else oy = y;
-            for(var x=0; x<gridsize; x++){
-                if(hflip) ox = gridsize - 1 - x; else ox = x;
-                j = oy * gridsize * 4 + ox * 4;
-                for(var p=0; p<4; p++){
-                    if(p > 3) break;
-                    if(invert & (1 << p))
-                        outTempAry[j++] = 255 - srcTempAry[i++];
-                    else
-                        outTempAry[j++] = srcTempAry[i++];
+        var hueRotCache = new Uint8Array(3);
+        var cache1 = new Array(srcTempAry.length),
+            cache2 = new Array(srcTempAry.length);
+
+        function moveCache(from, to){
+            for(var i=0; i<from.length; i++) to[i] = from[i];
+        };
+
+        // perform dct transform on the cache
+        function imageToDCT(input, output){
+            dct.transform(input, output);
+            for(var i=0; i<output.length; i++){
+                if(output[i] > 255) output[i] = 255;
+                if(output[i] < 0) output[i] = 0;
+            };
+        };
+
+        // manipulate the dct cache
+        function inverseLayerColor(input){
+            var i=0;
+            for(var y=0; y<gridsize; y++){
+                for(var x=0; x<gridsize; x++){
+                    for(var p=0; p<3; p++){
+                        if(randomByte & (1 << (p+2)))
+                            input[i] = 255 - input[i];
+                        i++;
+                    };
+                    i++;
                 };
             };
         };
+
+        // mirror grids
+        function mirrorGrids(input, output){
+            var i=0, j, ox, oy;
+            for(var y=0; y<gridsize; y++){
+                if(randomByte & 0x01) oy = gridsize - 1 - y; else oy = y;
+                for(var x=0; x<gridsize; x++){
+                    if(randomByte & 0x02) ox = gridsize - 1 - x; else ox = x;
+                    j = oy * gridsize * 4 + ox * 4;
+
+                    for(var p=0; p<3; p++){
+                        output[j++] = input[i++];
+                    };
+                    output[j++] = 255; // the alpha channel
+                    i++;
+                };
+            };
+        };
+
+        // inverse DCT
+        function dctToImage(input, output){
+            dct.inverse(input, output);
+        };
+
+        
+        // DCT matrix modification
+        function modifyDCTMatrix(input, direction){
+            return;
+            var i=0, inc = ((randomByte >> 5) & 3) * 85, t;
+            for(var x=0; x<gridsize; x++){
+                for(var y=0; y<gridsize; y++){
+                    if(x < 2 && y < 2){
+                        for(var p=0; p<3; p++){
+                            if(direction)
+                                t = input[i+p] + inc;
+                            else
+                                t = input[i+p] - inc;
+                            if(t > 255) t -= 255;
+                            if(t < 0) t += 255;
+                            input[i+p] = t;
+                        };
+                    };
+                    i+=4;
+                };
+            };
+        };
+
+
+
+        // do encryption or decryption
+        if(direction){ // encrypt
+            // 1. do random mirroring
+            mirrorGrids(srcTempAry, cache1);
+            // 2. do Image->DCT transform
+            //imageToDCT(cache1, cache2);
+            // 3. manipulate DCT results' color
+            inverseLayerColor(cache1);
+            //modifyDCTMatrix(cache2, direction);
+            // 4. do DCT->Image transform
+            //dctToImage(cache2, outTempAry);
+            moveCache(cache1, outTempAry);
+        } else {
+            moveCache(srcTempAry, cache1);
+            // 1. do Image->DCT transform
+            //imageToDCT(srcTempAry, cache1);
+            // 2. resume DCT results' color
+            inverseLayerColor(cache1);
+            //modifyDCTMatrix(cache1, direction);
+            // 3. do DCT->Image transform
+            //dctToImage(cache1, cache2);
+            // 4. resume mirroring
+            mirrorGrids(cache1, outTempAry);
+        };
+
+
 
         applyArrayToOut(oid, outTempAry);
     };
@@ -183,20 +331,18 @@ function imgcrypt(){
             for(var i=0; i<permL; i++){
                 mapper.add(
                     permutation[i],
-                    transformation[i] & 1, // hflip
-                    transformation[i] & 2, // vflip
-                    (transformation[i] & 28) >> 2, // inverted color, 3bits
-                    i
+                    transformation[i],
+                    i,
+                    false
                 );
             };
         } else {
             for(var i=0; i<permL; i++){
                 mapper.add(
                     i,
-                    transformation[i] & 1, // hflip
-                    transformation[i] & 2, // vflip
-                    (transformation[i] & 28) >> 2, // inverted color, 3bits
-                    permutation[i]
+                    transformation[i], 
+                    permutation[i],
+                    true
                 );
             };
         };
